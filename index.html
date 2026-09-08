@@ -103,6 +103,9 @@ let selectedLesson = null;
 let timerInterval = null;
 let seconds = 0;
 let utterance = null;
+let recognition = null;
+let finalTranscript = '';
+let isRecognizing = false;
 
 function renderLessons(){
   const list=document.getElementById("lessonList");
@@ -146,6 +149,16 @@ function openPractice(id){
       <div id="playerArea"></div>
       <div id="actionArea"></div>
 
+      <div id="transcriptArea" class="audio-box hidden">
+        <strong>📝 Your transcription</strong>
+        <div id="transcriptText" style="margin-top:10px;line-height:1.7;color:#374151"></div>
+        <div class="controls">
+          <button id="transcribeBtn" class="primary">📝 Transcribe my answer</button>
+          <button id="stopTranscribeBtn" class="secondary" disabled>⏹️ Stop transcription</button>
+        </div>
+        <span id="transcribeStatus" class="status">The transcription uses your browser's speech recognition.</span>
+      </div>
+
       <div class="info">
         💡 Tip: Speak for about <strong>20–60 seconds</strong>. Don't worry about making mistakes. The goal is to practice.
       </div>
@@ -159,6 +172,15 @@ function openPractice(id){
   document.getElementById("listenBtn").onclick=()=>speakQuestion(selectedLesson.question);
   document.getElementById("recordBtn").onclick=startRecording;
   document.getElementById("stopBtn").onclick=stopRecording;
+
+  document.getElementById("transcribeBtn").onclick=()=>{
+    startTranscription();
+  };
+
+  document.getElementById("stopTranscribeBtn").onclick=()=>{
+    stopTranscription();
+  };
+
   document.getElementById("backBtn").onclick=()=>{
     stopRecording();
     clearRecording();
@@ -280,6 +302,169 @@ function finishRecording(){
   if(status) status.textContent="✅ Recording ready.";
 }
 
+
+function startTranscription(){
+
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+  if(!SpeechRecognition){
+    alert(
+      "Tu navegador no tiene reconocimiento de voz compatible. Prueba con Google Chrome o Microsoft Edge."
+    );
+    return;
+  }
+
+  if(isRecognizing){
+    return;
+  }
+
+  const area=document.getElementById("transcriptArea");
+  const textBox=document.getElementById("transcriptText");
+  const status=document.getElementById("transcribeStatus");
+  const startBtn=document.getElementById("transcribeBtn");
+  const stopBtn=document.getElementById("stopTranscribeBtn");
+
+  if(area) area.classList.remove("hidden");
+
+  finalTranscript="";
+  if(textBox) textBox.textContent="Listening...";
+
+  recognition=new SpeechRecognition();
+  recognition.lang="en-US";
+  recognition.continuous=true;
+  recognition.interimResults=true;
+  recognition.maxAlternatives=1;
+
+  recognition.onstart=function(){
+    isRecognizing=true;
+    if(status) status.textContent="🔴 Listening... Speak in English.";
+    if(startBtn) startBtn.disabled=true;
+    if(stopBtn) stopBtn.disabled=false;
+  };
+
+  recognition.onresult=function(event){
+
+    let interim="";
+
+    for(let i=event.resultIndex;i<event.results.length;i++){
+
+      const phrase=event.results[i][0].transcript;
+
+      if(event.results[i].isFinal){
+        finalTranscript += phrase + " ";
+      }else{
+        interim += phrase;
+      }
+
+    }
+
+    if(textBox){
+      textBox.textContent=
+        (finalTranscript + interim).trim() ||
+        "Listening...";
+    }
+
+  };
+
+  recognition.onerror=function(event){
+
+    console.error("Speech recognition:",event.error);
+
+    isRecognizing=false;
+
+    if(status){
+
+      if(event.error==="not-allowed"){
+        status.textContent="❌ Microphone permission was denied for speech recognition.";
+      }else if(event.error==="no-speech"){
+        status.textContent="⚠️ No speech detected. Try again.";
+      }else{
+        status.textContent="⚠️ Speech recognition error: " + event.error;
+      }
+
+    }
+
+    if(startBtn) startBtn.disabled=false;
+    if(stopBtn) stopBtn.disabled=true;
+
+  };
+
+  recognition.onend=function(){
+
+    isRecognizing=false;
+
+    if(startBtn) startBtn.disabled=false;
+    if(stopBtn) stopBtn.disabled=true;
+
+    const result=finalTranscript.trim();
+
+    if(status){
+
+      status.textContent=
+        result
+        ? "✅ Transcription completed."
+        : "⚠️ No words were transcribed. Try speaking closer to the microphone.";
+
+    }
+
+    if(textBox && !result){
+      textBox.textContent="No transcription available.";
+    }
+
+    if(result){
+
+      const actionArea=document.getElementById("actionArea");
+
+      if(actionArea){
+
+        const existing=document.getElementById("aiReadyMessage");
+
+        if(!existing){
+
+          const box=document.createElement("div");
+          box.id="aiReadyMessage";
+          box.className="info";
+          box.innerHTML=
+            "<strong>🤖 Ready for AI correction</strong><br>" +
+            "Your answer has been transcribed. The next version can analyze grammar, vocabulary, fluency and give you a score.";
+
+          actionArea.appendChild(box);
+
+        }
+
+      }
+
+    }
+
+  };
+
+  try{
+    recognition.start();
+  }catch(error){
+    console.error(error);
+    isRecognizing=false;
+  }
+
+}
+
+
+function stopTranscription(){
+
+  if(recognition && isRecognizing){
+
+    try{
+      recognition.stop();
+    }catch(error){
+      console.error(error);
+    }
+
+  }
+
+}
+
+
 function updateTimer(){
   const m=String(Math.floor(seconds/60)).padStart(2,"0");
   const s=String(seconds%60).padStart(2,"0");
@@ -305,6 +490,25 @@ function clearRecording(){
   if(player) player.innerHTML="";
   if(actions) actions.innerHTML="";
   if(timer) timer.textContent="";
+
+  finalTranscript="";
+  if(recognition){
+    try{ recognition.abort(); }catch(e){}
+  }
+  isRecognizing=false;
+
+  const transcriptArea=document.getElementById("transcriptArea");
+  const transcriptText=document.getElementById("transcriptText");
+  const transcribeStatus=document.getElementById("transcribeStatus");
+  const transcribeBtn=document.getElementById("transcribeBtn");
+  const stopTranscribeBtn=document.getElementById("stopTranscribeBtn");
+
+  if(transcriptArea) transcriptArea.classList.add("hidden");
+  if(transcriptText) transcriptText.textContent="";
+  if(transcribeStatus) transcribeStatus.textContent="The transcription uses your browser's speech recognition.";
+  if(transcribeBtn) transcribeBtn.disabled=false;
+  if(stopTranscribeBtn) stopTranscribeBtn.disabled=true;
+
   if(recordBtn) recordBtn.disabled=false;
   if(stopBtn) stopBtn.disabled=true;
 }
