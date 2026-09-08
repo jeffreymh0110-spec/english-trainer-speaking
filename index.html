@@ -149,14 +149,14 @@ function openPractice(id){
       <div id="playerArea"></div>
       <div id="actionArea"></div>
 
-      <div id="transcriptArea" class="audio-box hidden">
-        <strong>📝 Your transcription</strong>
-        <div id="transcriptText" style="margin-top:10px;line-height:1.7;color:#374151"></div>
-        <div class="controls">
-          <button id="transcribeBtn" class="primary">📝 Transcribe my answer</button>
-          <button id="stopTranscribeBtn" class="secondary" disabled>⏹️ Stop transcription</button>
+      <div id="transcriptArea" class="audio-box">
+        <strong>📝 Live transcription</strong>
+        <div id="transcriptText" style="margin-top:10px;line-height:1.7;color:#374151">
+          Your spoken answer will appear here while you talk.
         </div>
-        <span id="transcribeStatus" class="status">The transcription uses your browser's speech recognition.</span>
+        <span id="transcribeStatus" class="status">
+          Start recording and speak in English. The text will appear automatically.
+        </span>
       </div>
 
       <div class="info">
@@ -172,14 +172,6 @@ function openPractice(id){
   document.getElementById("listenBtn").onclick=()=>speakQuestion(selectedLesson.question);
   document.getElementById("recordBtn").onclick=startRecording;
   document.getElementById("stopBtn").onclick=stopRecording;
-
-  document.getElementById("transcribeBtn").onclick=()=>{
-    startTranscription();
-  };
-
-  document.getElementById("stopTranscribeBtn").onclick=()=>{
-    stopTranscription();
-  };
 
   document.getElementById("backBtn").onclick=()=>{
     stopRecording();
@@ -211,22 +203,28 @@ function speakQuestion(text){
 }
 
 async function startRecording(){
+
   if(recorder && recorder.state==="recording") return;
 
   try{
+
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-      throw new Error("Microphone API unavailable. Use HTTPS or localhost.");
+      throw new Error("Microphone API unavailable.");
     }
 
     stream=await navigator.mediaDevices.getUserMedia({audio:true});
     chunks=[];
     recordingBlob=null;
+    finalTranscript="";
 
     let mime="audio/webm";
+
     if(!MediaRecorder.isTypeSupported(mime)) mime="audio/mp4";
     if(!MediaRecorder.isTypeSupported(mime)) mime="";
 
-    recorder=mime ? new MediaRecorder(stream,{mimeType:mime}) : new MediaRecorder(stream);
+    recorder=mime
+      ? new MediaRecorder(stream,{mimeType:mime})
+      : new MediaRecorder(stream);
 
     recorder.ondataavailable=e=>{
       if(e.data && e.data.size>0) chunks.push(e.data);
@@ -235,8 +233,12 @@ async function startRecording(){
     recorder.onstop=finishRecording;
     recorder.start();
 
+    // Start browser speech recognition at the same time.
+    startTranscription();
+
     seconds=0;
     updateTimer();
+
     timerInterval=setInterval(()=>{
       seconds++;
       updateTimer();
@@ -244,21 +246,39 @@ async function startRecording(){
 
     document.getElementById("recordBtn").disabled=true;
     document.getElementById("stopBtn").disabled=false;
-    document.getElementById("status").textContent="🔴 Recording... Speak clearly in English.";
-  }catch(err){
-    console.error(err);
-    alert("Could not access the microphone. If you are using GitHub Pages, make sure the page opens with HTTPS and allow microphone permission in the browser.");
-  }
-}
 
+    document.getElementById("status").textContent=
+      "🔴 Recording... Speak clearly in English.";
+
+  }catch(err){
+
+    console.error(err);
+
+    if(stream){
+      stream.getTracks().forEach(track=>track.stop());
+      stream=null;
+    }
+
+    alert(
+      "Could not access the microphone. Make sure microphone permission is allowed for this GitHub Pages site."
+    );
+
+  }
+
+}
 function stopRecording(){
+
   if(recorder && recorder.state==="recording"){
     recorder.stop();
   }
+
+  stopTranscription();
+
   if(stream){
     stream.getTracks().forEach(track=>track.stop());
     stream=null;
   }
+
 }
 
 function finishRecording(){
@@ -309,39 +329,39 @@ function startTranscription(){
     window.SpeechRecognition ||
     window.webkitSpeechRecognition;
 
-  if(!SpeechRecognition){
-    alert(
-      "Tu navegador no tiene reconocimiento de voz compatible. Prueba con Google Chrome o Microsoft Edge."
-    );
-    return;
-  }
-
-  if(isRecognizing){
-    return;
-  }
-
-  const area=document.getElementById("transcriptArea");
   const textBox=document.getElementById("transcriptText");
   const status=document.getElementById("transcribeStatus");
-  const startBtn=document.getElementById("transcribeBtn");
-  const stopBtn=document.getElementById("stopTranscribeBtn");
 
-  if(area) area.classList.remove("hidden");
+  if(!SpeechRecognition){
+
+    if(status){
+      status.textContent=
+        "⚠️ Your browser does not support live speech recognition. Use Google Chrome or Microsoft Edge.";
+    }
+
+    return;
+  }
+
+  if(isRecognizing) return;
 
   finalTranscript="";
-  if(textBox) textBox.textContent="Listening...";
 
   recognition=new SpeechRecognition();
+
   recognition.lang="en-US";
   recognition.continuous=true;
   recognition.interimResults=true;
   recognition.maxAlternatives=1;
 
   recognition.onstart=function(){
+
     isRecognizing=true;
-    if(status) status.textContent="🔴 Listening... Speak in English.";
-    if(startBtn) startBtn.disabled=true;
-    if(stopBtn) stopBtn.disabled=false;
+
+    if(status){
+      status.textContent=
+        "🔴 Listening... your words will appear here while you speak.";
+    }
+
   };
 
   recognition.onresult=function(event){
@@ -353,41 +373,55 @@ function startTranscription(){
       const phrase=event.results[i][0].transcript;
 
       if(event.results[i].isFinal){
+
         finalTranscript += phrase + " ";
+
       }else{
+
         interim += phrase;
+
       }
 
     }
 
     if(textBox){
-      textBox.textContent=
-        (finalTranscript + interim).trim() ||
-        "Listening...";
+
+      const visible =
+        (finalTranscript + interim).trim();
+
+      textBox.textContent =
+        visible || "Listening...";
+
     }
 
   };
 
   recognition.onerror=function(event){
 
-    console.error("Speech recognition:",event.error);
-
-    isRecognizing=false;
+    console.warn("Speech recognition:",event.error);
 
     if(status){
 
       if(event.error==="not-allowed"){
-        status.textContent="❌ Microphone permission was denied for speech recognition.";
+
+        status.textContent=
+          "❌ Speech recognition permission was denied. Allow microphone access for this site.";
+
       }else if(event.error==="no-speech"){
-        status.textContent="⚠️ No speech detected. Try again.";
+
+        status.textContent=
+          "⚠️ No speech detected yet. Keep speaking.";
+
       }else{
-        status.textContent="⚠️ Speech recognition error: " + event.error;
+
+        status.textContent=
+          "⚠️ Speech recognition: " + event.error;
+
       }
 
     }
 
-    if(startBtn) startBtn.disabled=false;
-    if(stopBtn) stopBtn.disabled=true;
+    isRecognizing=false;
 
   };
 
@@ -395,76 +429,64 @@ function startTranscription(){
 
     isRecognizing=false;
 
-    if(startBtn) startBtn.disabled=false;
-    if(stopBtn) stopBtn.disabled=true;
+    // Chrome can stop recognition automatically after a pause.
+    // Restart it while the audio recorder is still running.
+    if(recorder && recorder.state==="recording"){
+
+      try{
+        recognition.start();
+        return;
+      }catch(e){}
+
+    }
 
     const result=finalTranscript.trim();
 
     if(status){
 
-      status.textContent=
+      status.textContent =
         result
         ? "✅ Transcription completed."
-        : "⚠️ No words were transcribed. Try speaking closer to the microphone.";
+        : "⚠️ No words were transcribed.";
 
     }
 
     if(textBox && !result){
-      textBox.textContent="No transcription available.";
-    }
 
-    if(result){
-
-      const actionArea=document.getElementById("actionArea");
-
-      if(actionArea){
-
-        const existing=document.getElementById("aiReadyMessage");
-
-        if(!existing){
-
-          const box=document.createElement("div");
-          box.id="aiReadyMessage";
-          box.className="info";
-          box.innerHTML=
-            "<strong>🤖 Ready for AI correction</strong><br>" +
-            "Your answer has been transcribed. The next version can analyze grammar, vocabulary, fluency and give you a score.";
-
-          actionArea.appendChild(box);
-
-        }
-
-      }
+      textBox.textContent=
+        "No transcription available.";
 
     }
 
   };
 
   try{
+
     recognition.start();
+
   }catch(error){
-    console.error(error);
+
+    console.warn(error);
     isRecognizing=false;
+
   }
 
 }
-
-
 function stopTranscription(){
 
-  if(recognition && isRecognizing){
+  if(recognition){
 
     try{
       recognition.stop();
     }catch(error){
-      console.error(error);
+      console.warn(error);
     }
 
   }
 
+  isRecognizing=false;
+
 }
-
-
 function updateTimer(){
   const m=String(Math.floor(seconds/60)).padStart(2,"0");
   const s=String(seconds%60).padStart(2,"0");
@@ -500,14 +522,9 @@ function clearRecording(){
   const transcriptArea=document.getElementById("transcriptArea");
   const transcriptText=document.getElementById("transcriptText");
   const transcribeStatus=document.getElementById("transcribeStatus");
-  const transcribeBtn=document.getElementById("transcribeBtn");
-  const stopTranscribeBtn=document.getElementById("stopTranscribeBtn");
-
-  if(transcriptArea) transcriptArea.classList.add("hidden");
-  if(transcriptText) transcriptText.textContent="";
-  if(transcribeStatus) transcribeStatus.textContent="The transcription uses your browser's speech recognition.";
-  if(transcribeBtn) transcribeBtn.disabled=false;
-  if(stopTranscribeBtn) stopTranscribeBtn.disabled=true;
+  if(transcriptArea) transcriptArea.classList.remove("hidden");
+  if(transcriptText) transcriptText.textContent="Your spoken answer will appear here while you talk.";
+  if(transcribeStatus) transcribeStatus.textContent="Start recording and speak in English. The text will appear automatically.";
 
   if(recordBtn) recordBtn.disabled=false;
   if(stopBtn) stopBtn.disabled=true;
