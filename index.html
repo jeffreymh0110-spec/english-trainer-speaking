@@ -24,6 +24,13 @@ button{border:0;border-radius:10px;padding:13px 18px;cursor:pointer;font-weight:
 .empty{color:#9ca3af}
 audio{width:100%;margin-top:15px}
 .note{background:#eef2ff;border-radius:12px;padding:15px;line-height:1.6;color:#374151}
+.hidden{display:none!important}
+.score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+.score{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:15px;text-align:center}
+.score strong{display:block;font-size:28px;color:#2563eb;margin-top:5px}
+.correction{background:#f8fafc;border-left:4px solid #2563eb;border-radius:8px;padding:14px;margin-top:10px;line-height:1.6}
+.correction .said{color:#b91c1c}.correction .better{color:#15803d;font-weight:bold}
+@media(max-width:700px){.score-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.header h1{font-size:24px}.task{font-size:19px}.container{padding:15px}}
 </style>
 </head>
@@ -43,6 +50,7 @@ audio{width:100%;margin-top:15px}
     <div class="controls">
       <button id="startButton" class="primary">🎙️ Start Recording</button>
       <button id="stopButton" class="danger" disabled>⏹️ Stop Recording</button>
+      <button id="analyzeButton" class="primary" disabled>🤖 Analyze with AI</button>
     </div>
 
     <span id="status" class="status">
@@ -60,6 +68,14 @@ audio{width:100%;margin-top:15px}
   <div class="card">
     <h2>🎧 Recording</h2>
     <audio id="audioPlayer" controls class="hidden"></audio>
+  </div>
+
+  <div id="aiResultCard" class="card hidden">
+    <h2>🤖 AI Evaluation</h2>
+    <div id="scores"></div>
+    <div id="summaryBox" style="margin-top:18px;line-height:1.7;"></div>
+    <div id="correctionsBox" style="margin-top:18px;"></div>
+    <div id="recommendationBox" style="margin-top:18px;line-height:1.7;"></div>
   </div>
 
   <div class="card">
@@ -97,6 +113,15 @@ const stopButton = document.getElementById("stopButton");
 const statusEl = document.getElementById("status");
 const transcriptionEl = document.getElementById("transcription");
 const audioPlayer = document.getElementById("audioPlayer");
+const analyzeButton = document.getElementById("analyzeButton");
+const aiResultCard = document.getElementById("aiResultCard");
+const scoresEl = document.getElementById("scores");
+const summaryBox = document.getElementById("summaryBox");
+const correctionsBox = document.getElementById("correctionsBox");
+const recommendationBox = document.getElementById("recommendationBox");
+
+const APPS_SCRIPT_WEB_APP_URL = "REPLACE_WITH_YOUR_APPS_SCRIPT_WEB_APP_URL";
+let currentTranscript = "";
 
 function setStatus(text){
   statusEl.innerText = text;
@@ -182,12 +207,16 @@ async function startRecording(){
       stream.getTracks().forEach(track => track.stop());
 
       const finalText = finalTranscript.trim();
+      currentTranscript = finalText;
+
       transcriptionEl.innerText =
         finalText || "No speech was detected.";
 
+      analyzeButton.disabled = !finalText;
+
       setStatus(
         finalText
-          ? "✅ Recording finished. Your transcription is ready."
+          ? "✅ Recording finished. You can now analyze it with AI."
           : "✅ Recording finished, but no speech was detected."
       );
     };
@@ -234,8 +263,128 @@ function stopRecording(){
   }
 }
 
+
+function showAIResult(result){
+  aiResultCard.classList.remove("hidden");
+
+  scoresEl.innerHTML = `
+    <div class="score-grid">
+      <div class="score">Overall<strong>${result.overall}</strong></div>
+      <div class="score">Grammar<strong>${result.grammar}</strong></div>
+      <div class="score">Vocabulary<strong>${result.vocabulary}</strong></div>
+      <div class="score">Fluency<strong>${result.fluency}</strong></div>
+    </div>
+  `;
+
+  summaryBox.innerHTML =
+    "<h3>📌 Summary</h3><p>" +
+    escapeHtml(result.summary) +
+    "</p>";
+
+  if(result.corrections && result.corrections.length){
+    let html = "<h3>✍️ Corrections</h3>";
+
+    result.corrections.forEach(function(item){
+      html += `
+        <div class="correction">
+          <div class="said">❌ You said: ${escapeHtml(item.said)}</div>
+          <div class="better">✅ Better: ${escapeHtml(item.better)}</div>
+          <div>💡 ${escapeHtml(item.explanation)}</div>
+        </div>
+      `;
+    });
+
+    correctionsBox.innerHTML = html;
+  }else{
+    correctionsBox.innerHTML =
+      "<h3>✍️ Corrections</h3><p>✅ No important grammar corrections.</p>";
+  }
+
+  recommendationBox.innerHTML =
+    "<h3>🚀 Recommendation</h3><p>" +
+    escapeHtml(result.recommendation) +
+    "</p>";
+}
+
+function escapeHtml(value){
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function analyzeWithAI(){
+  if(!currentTranscript){
+    setStatus("⚠️ Record something in English first.");
+    return;
+  }
+
+  if(
+    !APPS_SCRIPT_WEB_APP_URL ||
+    APPS_SCRIPT_WEB_APP_URL.indexOf("REPLACE_WITH") === 0
+  ){
+    setStatus("⚠️ Add your Apps Script Web App URL to this page first.");
+    return;
+  }
+
+  analyzeButton.disabled = true;
+  setStatus("🤖 AI is analyzing your English...");
+
+  const callbackName =
+    "speakingCallback_" +
+    Date.now();
+
+  window[callbackName] = function(response){
+    try{
+      if(!response || !response.success){
+        throw new Error(
+          response && response.error
+            ? response.error
+            : "AI analysis failed."
+        );
+      }
+
+      showAIResult(response.result);
+      setStatus("✅ AI evaluation completed.");
+    }catch(error){
+      console.error(error);
+      setStatus("❌ " + error.message);
+    }finally{
+      analyzeButton.disabled = false;
+      delete window[callbackName];
+    }
+  };
+
+  const url =
+    APPS_SCRIPT_WEB_APP_URL +
+    "?api=speaking" +
+    "&callback=" + encodeURIComponent(callbackName) +
+    "&token=" + encodeURIComponent(params.get("token") || "") +
+    "&lessonId=" + encodeURIComponent(lessonId || "") +
+    "&transcript=" + encodeURIComponent(currentTranscript);
+
+  const script = document.createElement("script");
+  script.src = url;
+
+  script.onerror = function(){
+    setStatus("❌ Could not connect to the English Trainer server.");
+    analyzeButton.disabled = false;
+    delete window[callbackName];
+    script.remove();
+  };
+
+  document.body.appendChild(script);
+
+  setTimeout(function(){
+    script.remove();
+  }, 120000);
+}
+
 startButton.addEventListener("click", startRecording);
 stopButton.addEventListener("click", stopRecording);
+analyzeButton.addEventListener("click", analyzeWithAI);
 
 setupRecognition();
 </script>
