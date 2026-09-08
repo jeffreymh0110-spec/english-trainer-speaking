@@ -7,560 +7,237 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
 body{background:#f4f7fb;color:#1f2937;min-height:100vh}
-.app{display:flex;min-height:100vh}
-.sidebar{width:240px;background:#111827;color:white;padding:25px 15px;flex-shrink:0}
-.logo{text-align:center;font-size:22px;font-weight:bold;margin-bottom:30px}
-.logo small{display:block;color:#9ca3af;font-size:11px;margin-top:6px}
-.menu button{width:100%;border:0;background:transparent;color:#d1d5db;padding:14px;border-radius:10px;text-align:left;cursor:pointer;margin-bottom:6px;font-size:15px}
-.menu button:hover,.menu button.active{background:#2563eb;color:white}
-.content{flex:1;padding:30px;width:100%;max-width:1500px}
-.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}
-.top h1{font-size:30px;margin-bottom:6px}
-.top p{color:#6b7280}
-.section{background:white;padding:25px;border-radius:15px;box-shadow:0 3px 12px rgba(0,0,0,.06);margin-bottom:20px}
-.badge{display:inline-block;background:#eff6ff;color:#2563eb;padding:5px 9px;border-radius:8px;font-size:12px;margin-bottom:10px}
-.lesson-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
-.lesson{background:white;border:1px solid #e5e7eb;border-radius:14px;padding:24px;cursor:pointer;transition:.2s}
-.lesson:hover{border-color:#2563eb;transform:translateY(-2px);box-shadow:0 5px 15px rgba(0,0,0,.08)}
-.lesson h3{margin-bottom:10px}.lesson p{color:#6b7280;line-height:1.6}
-.lesson-link{color:#2563eb;font-weight:bold;margin-top:15px}
-.speaking{background:#eef2ff;padding:25px;border-radius:14px;margin-top:10px}
-.question{font-size:25px;font-weight:bold;line-height:1.5;margin:18px 0}
-.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
-button{font-family:Arial,sans-serif}
-.primary,.secondary,.dark{border:0;border-radius:10px;padding:13px 18px;cursor:pointer;font-weight:bold}
+.container{max-width:900px;margin:0 auto;padding:28px 18px}
+.header{background:#111827;color:white;border-radius:18px;padding:26px;margin-bottom:20px}
+.header h1{font-size:30px;margin-bottom:8px}
+.header p{color:#d1d5db}
+.card{background:white;border-radius:16px;padding:24px;margin-bottom:18px;box-shadow:0 4px 16px rgba(0,0,0,.07)}
+.badge{display:inline-block;background:#eff6ff;color:#2563eb;padding:6px 10px;border-radius:8px;font-size:13px;font-weight:bold;margin-bottom:12px}
+.task{font-size:22px;font-weight:bold;line-height:1.5;margin-top:10px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+button{border:0;border-radius:10px;padding:13px 18px;cursor:pointer;font-weight:bold;font-size:15px}
 .primary{background:#2563eb;color:white}.primary:hover{background:#1d4ed8}
-.secondary{background:#e5e7eb;color:#374151}.dark{background:#111827;color:white}
-.primary:disabled,.secondary:disabled,.dark:disabled{opacity:.55;cursor:not-allowed}
-.status{display:block;margin-top:14px;color:#6b7280;font-size:14px}
-.timer{font-size:18px;font-weight:bold;margin-top:12px}
-.audio-box{margin-top:18px;background:white;border:1px solid #e5e7eb;padding:16px;border-radius:12px}
-audio{width:100%;margin-top:8px}
-.good{background:#f0fdf4;border-left:5px solid #16a34a;padding:15px;border-radius:8px;margin-top:15px}
-.info{background:#eff6ff;border-left:5px solid #2563eb;padding:15px;border-radius:8px;margin-top:15px;line-height:1.6}
-.hidden{display:none!important}
-@media(max-width:900px){.lesson-grid{grid-template-columns:1fr}}
-@media(max-width:650px){
- .app{display:block}.sidebar{width:100%;padding:15px}.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}
- .menu button{margin:0}.content{padding:15px}.top{align-items:flex-start;gap:15px;flex-direction:column}.question{font-size:21px}
-}
+.secondary{background:#e5e7eb;color:#374151}
+.danger{background:#dc2626;color:white}
+.status{display:block;color:#6b7280;margin-top:14px;line-height:1.5}
+.transcription{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:18px;min-height:130px;margin-top:15px;line-height:1.7;font-size:18px}
+.empty{color:#9ca3af}
+audio{width:100%;margin-top:15px}
+.note{background:#eef2ff;border-radius:12px;padding:15px;line-height:1.6;color:#374151}
+@media(max-width:600px){.header h1{font-size:24px}.task{font-size:19px}.container{padding:15px}}
 </style>
 </head>
 <body>
+<div class="container">
 
-<div class="app">
-  <aside class="sidebar">
-    <div class="logo">🇬🇧 English Trainer<small>Speaking Practice</small></div>
-    <div class="menu">
-      <button id="homeButton" class="active">🏠 Inicio</button>
-      <button id="speakingButton">🗣️ Speaking</button>
+  <div class="header">
+    <h1>🗣️ English Trainer Speaking</h1>
+    <p>Speak in English, see your transcription and practice your lesson.</p>
+  </div>
+
+  <div class="card">
+    <span class="badge" id="lessonBadge">Speaking Practice</span>
+    <h2 id="lessonTitle">General Speaking Practice</h2>
+    <div class="task" id="task">Talk about yourself for 30 seconds.</div>
+
+    <div class="controls">
+      <button id="startButton" class="primary">🎙️ Start Recording</button>
+      <button id="stopButton" class="danger" disabled>⏹️ Stop Recording</button>
     </div>
-  </aside>
 
-  <main class="content">
-    <section id="home">
-      <div class="top">
-        <div>
-          <h1>🗣️ Speaking Practice</h1>
-          <p>Improve your English by answering questions aloud.</p>
-        </div>
-      </div>
+    <span id="status" class="status">
+      Ready. Click Start Recording and allow microphone access.
+    </span>
+  </div>
 
-      <div class="section">
-        <span class="badge">A2 • Speaking</span>
-        <h2>🎙️ Choose a topic</h2>
-        <p style="color:#6b7280;margin:10px 0 20px">
-          Select a lesson, listen to the question, and record your answer.
-        </p>
-        <div id="lessonList" class="lesson-grid"></div>
-      </div>
+  <div class="card">
+    <h2>📝 Live Transcription</h2>
+    <div id="transcription" class="transcription">
+      <span class="empty">Your words will appear here while you speak...</span>
+    </div>
+  </div>
 
-      <div id="practiceArea" class="section hidden"></div>
-    </section>
-  </main>
+  <div class="card">
+    <h2>🎧 Recording</h2>
+    <audio id="audioPlayer" controls class="hidden"></audio>
+  </div>
+
+  <div class="card">
+    <div class="note">
+      💡 <strong>Tip:</strong> Speak naturally. Don't worry about mistakes.
+      We will use this transcription later to add AI grammar, vocabulary and fluency feedback.
+    </div>
+  </div>
+
 </div>
 
 <script>
-const lessons = [
-  {id:1,title:"Present Simple",question:"Tell me about your daily routine."},
-  {id:2,title:"Present Continuous",question:"What are you doing right now?"},
-  {id:3,title:"Past Simple",question:"What did you do yesterday?"},
-  {id:4,title:"Past Continuous",question:"What were you doing yesterday at 8 PM?"},
-  {id:5,title:"Present Perfect",question:"Talk about an experience you have had."},
-  {id:6,title:"Will vs Going To",question:"What are you going to do next weekend?"},
-  {id:7,title:"Should and Could",question:"What should someone do to learn English?"},
-  {id:8,title:"Some and Any",question:"Talk about things you have and things you don't have."},
-  {id:9,title:"Much and Many",question:"Talk about how much time and money you have."},
-  {id:10,title:"Since and For",question:"How long have you studied English?"}
-];
-
-let recorder = null;
-let stream = null;
-let chunks = [];
-let recordingBlob = null;
-let recordingUrl = null;
-let selectedLesson = null;
-let timerInterval = null;
-let seconds = 0;
-let utterance = null;
+let mediaRecorder = null;
+let audioChunks = [];
 let recognition = null;
-let finalTranscript = '';
-let isRecognizing = false;
+let isRecording = false;
+let finalTranscript = "";
 
-function renderLessons(){
-  const list=document.getElementById("lessonList");
-  list.innerHTML="";
-  lessons.forEach(lesson=>{
-    const card=document.createElement("div");
-    card.className="lesson";
-    card.innerHTML=`
-      <span class="badge">A2 • Lesson ${lesson.id}</span>
-      <h3>🗣️ ${lesson.title}</h3>
-      <p>${lesson.question}</p>
-      <div class="lesson-link">🎙️ Practice speaking →</div>
-    `;
-    card.addEventListener("click",()=>openPractice(lesson.id));
-    list.appendChild(card);
-  });
+const params = new URLSearchParams(window.location.search);
+const lessonId = params.get("lessonId");
+const lesson = params.get("lesson");
+const task = params.get("task");
+
+if(lesson){
+  document.getElementById("lessonBadge").innerText =
+    "Lesson " + (lessonId || "") + " • Speaking";
+  document.getElementById("lessonTitle").innerText = lesson;
+}
+if(task){
+  document.getElementById("task").innerText = task;
 }
 
-function openPractice(id){
-  selectedLesson=lessons.find(x=>x.id===id);
-  stopRecording();
-  clearRecording();
+const startButton = document.getElementById("startButton");
+const stopButton = document.getElementById("stopButton");
+const statusEl = document.getElementById("status");
+const transcriptionEl = document.getElementById("transcription");
+const audioPlayer = document.getElementById("audioPlayer");
 
-  const area=document.getElementById("practiceArea");
-  area.classList.remove("hidden");
-  area.innerHTML=`
-    <div class="speaking">
-      <span class="badge">Lesson ${selectedLesson.id} • ${selectedLesson.title}</span>
-      <h2>🎤 Speaking Challenge</h2>
-      <p style="margin-top:8px">Answer this question in English:</p>
-      <div class="question">${selectedLesson.question}</div>
-
-      <div class="controls">
-        <button id="listenBtn" class="dark">🔊 Listen to question</button>
-        <button id="recordBtn" class="primary">🎙️ Record answer</button>
-        <button id="stopBtn" class="secondary" disabled>⏹️ Stop</button>
-      </div>
-
-      <span id="status" class="status">Ready to record.</span>
-      <div id="timer" class="timer"></div>
-      <div id="playerArea"></div>
-      <div id="actionArea"></div>
-
-      <div id="transcriptArea" class="audio-box">
-        <strong>📝 Live transcription</strong>
-        <div id="transcriptText" style="margin-top:10px;line-height:1.7;color:#374151">
-          Your spoken answer will appear here while you talk.
-        </div>
-        <span id="transcribeStatus" class="status">
-          Start recording and speak in English. The text will appear automatically.
-        </span>
-      </div>
-
-      <div class="info">
-        💡 Tip: Speak for about <strong>20–60 seconds</strong>. Don't worry about making mistakes. The goal is to practice.
-      </div>
-
-      <div class="controls">
-        <button id="backBtn" class="secondary">← Choose another topic</button>
-      </div>
-    </div>
-  `;
-
-  document.getElementById("listenBtn").onclick=()=>speakQuestion(selectedLesson.question);
-  document.getElementById("recordBtn").onclick=startRecording;
-  document.getElementById("stopBtn").onclick=stopRecording;
-
-  document.getElementById("backBtn").onclick=()=>{
-    stopRecording();
-    clearRecording();
-    area.classList.add("hidden");
-  };
-
-  area.scrollIntoView({behavior:"smooth",block:"start"});
+function setStatus(text){
+  statusEl.innerText = text;
 }
 
-function speakQuestion(text){
-  if(!("speechSynthesis" in window)){
-    alert("Your browser does not support speech synthesis.");
+function setupRecognition(){
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if(!SpeechRecognition){
+    recognition = null;
     return;
   }
-  speechSynthesis.cancel();
-  utterance=new SpeechSynthesisUtterance(text);
-  utterance.lang="en-US";
-  utterance.rate=0.78;
-  utterance.onstart=()=>{
-    const s=document.getElementById("status");
-    if(s) s.textContent="🔊 Playing question...";
+
+  recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onresult = function(event){
+    let interim = "";
+
+    for(let i = event.resultIndex; i < event.results.length; i++){
+      const text = event.results[i][0].transcript;
+
+      if(event.results[i].isFinal){
+        finalTranscript += text + " ";
+      }else{
+        interim += text;
+      }
+    }
+
+    const combined = (finalTranscript + interim).trim();
+
+    transcriptionEl.innerText =
+      combined ||
+      "Your words will appear here while you speak...";
   };
-  utterance.onend=()=>{
-    const s=document.getElementById("status");
-    if(s) s.textContent="Ready to record.";
+
+  recognition.onerror = function(event){
+    console.log("Speech recognition:", event.error);
+
+    if(event.error === "not-allowed" || event.error === "service-not-allowed"){
+      setStatus("⚠️ Speech recognition permission was blocked. Microphone recording may still work.");
+    }
   };
-  speechSynthesis.speak(utterance);
+
+  recognition.onend = function(){
+    if(isRecording){
+      try{
+        recognition.start();
+      }catch(e){}
+    }
+  };
 }
 
 async function startRecording(){
-
-  if(recorder && recorder.state==="recording") return;
+  if(isRecording) return;
 
   try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
 
-    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-      throw new Error("Microphone API unavailable.");
-    }
+    audioChunks = [];
+    finalTranscript = "";
+    transcriptionEl.innerText =
+      "🎙️ Listening... start speaking in English.";
 
-    stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    chunks=[];
-    recordingBlob=null;
-    finalTranscript="";
+    mediaRecorder = new MediaRecorder(stream);
 
-    let mime="audio/webm";
-
-    if(!MediaRecorder.isTypeSupported(mime)) mime="audio/mp4";
-    if(!MediaRecorder.isTypeSupported(mime)) mime="";
-
-    recorder=mime
-      ? new MediaRecorder(stream,{mimeType:mime})
-      : new MediaRecorder(stream);
-
-    recorder.ondataavailable=e=>{
-      if(e.data && e.data.size>0) chunks.push(e.data);
+    mediaRecorder.ondataavailable = function(event){
+      if(event.data && event.data.size > 0){
+        audioChunks.push(event.data);
+      }
     };
 
-    recorder.onstop=finishRecording;
-    recorder.start();
+    mediaRecorder.onstop = function(){
+      const blob = new Blob(audioChunks, {type:"audio/webm"});
+      const url = URL.createObjectURL(blob);
 
-    // Start browser speech recognition at the same time.
-    startTranscription();
+      audioPlayer.src = url;
+      audioPlayer.classList.remove("hidden");
 
-    seconds=0;
-    updateTimer();
+      stream.getTracks().forEach(track => track.stop());
 
-    timerInterval=setInterval(()=>{
-      seconds++;
-      updateTimer();
-    },1000);
+      const finalText = finalTranscript.trim();
+      transcriptionEl.innerText =
+        finalText || "No speech was detected.";
 
-    document.getElementById("recordBtn").disabled=true;
-    document.getElementById("stopBtn").disabled=false;
+      setStatus(
+        finalText
+          ? "✅ Recording finished. Your transcription is ready."
+          : "✅ Recording finished, but no speech was detected."
+      );
+    };
 
-    document.getElementById("status").textContent=
-      "🔴 Recording... Speak clearly in English.";
+    mediaRecorder.start();
+    isRecording = true;
 
-  }catch(err){
+    startButton.disabled = true;
+    stopButton.disabled = false;
 
-    console.error(err);
+    setStatus("🔴 Recording... speak in English.");
 
-    if(stream){
-      stream.getTracks().forEach(track=>track.stop());
-      stream=null;
-    }
-
-    alert(
-      "Could not access the microphone. Make sure microphone permission is allowed for this GitHub Pages site."
-    );
-
-  }
-
-}
-function stopRecording(){
-
-  if(recorder && recorder.state==="recording"){
-    recorder.stop();
-  }
-
-  stopTranscription();
-
-  if(stream){
-    stream.getTracks().forEach(track=>track.stop());
-    stream=null;
-  }
-
-}
-
-function finishRecording(){
-  clearInterval(timerInterval);
-  recordingBlob=new Blob(chunks,{type:recorder.mimeType || "audio/webm"});
-  recordingUrl=URL.createObjectURL(recordingBlob);
-
-  const player=document.getElementById("playerArea");
-  const actions=document.getElementById("actionArea");
-  if(!player || !actions) return;
-
-  player.innerHTML=`
-    <div class="audio-box">
-      <strong>▶️ Your answer</strong>
-      <audio controls src="${recordingUrl}"></audio>
-    </div>
-  `;
-
-  actions.innerHTML=`
-    <div class="controls">
-      <button id="downloadBtn" class="primary">💾 Save recording</button>
-      <button id="deleteBtn" class="secondary">🗑️ Delete and record again</button>
-    </div>
-    <div class="good">
-      ✅ Recording completed. Listen to your answer before saving it.
-    </div>
-  `;
-
-  document.getElementById("downloadBtn").onclick=downloadRecording;
-  document.getElementById("deleteBtn").onclick=()=>{
-    clearRecording();
-    document.getElementById("status").textContent="Ready to record again.";
-  };
-
-  const recordBtn=document.getElementById("recordBtn");
-  const stopBtn=document.getElementById("stopBtn");
-  if(recordBtn) recordBtn.disabled=false;
-  if(stopBtn) stopBtn.disabled=true;
-
-  const status=document.getElementById("status");
-  if(status) status.textContent="✅ Recording ready.";
-}
-
-
-function startTranscription(){
-
-  const SpeechRecognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
-
-  const textBox=document.getElementById("transcriptText");
-  const status=document.getElementById("transcribeStatus");
-
-  if(!SpeechRecognition){
-
-    if(status){
-      status.textContent=
-        "⚠️ Your browser does not support live speech recognition. Use Google Chrome or Microsoft Edge.";
-    }
-
-    return;
-  }
-
-  if(isRecognizing) return;
-
-  finalTranscript="";
-
-  recognition=new SpeechRecognition();
-
-  recognition.lang="en-US";
-  recognition.continuous=true;
-  recognition.interimResults=true;
-  recognition.maxAlternatives=1;
-
-  recognition.onstart=function(){
-
-    isRecognizing=true;
-
-    if(status){
-      status.textContent=
-        "🔴 Listening... your words will appear here while you speak.";
-    }
-
-  };
-
-  recognition.onresult=function(event){
-
-    let interim="";
-
-    for(let i=event.resultIndex;i<event.results.length;i++){
-
-      const phrase=event.results[i][0].transcript;
-
-      if(event.results[i].isFinal){
-
-        finalTranscript += phrase + " ";
-
-      }else{
-
-        interim += phrase;
-
-      }
-
-    }
-
-    if(textBox){
-
-      const visible =
-        (finalTranscript + interim).trim();
-
-      textBox.textContent =
-        visible || "Listening...";
-
-    }
-
-  };
-
-  recognition.onerror=function(event){
-
-    console.warn("Speech recognition:",event.error);
-
-    if(status){
-
-      if(event.error==="not-allowed"){
-
-        status.textContent=
-          "❌ Speech recognition permission was denied. Allow microphone access for this site.";
-
-      }else if(event.error==="no-speech"){
-
-        status.textContent=
-          "⚠️ No speech detected yet. Keep speaking.";
-
-      }else{
-
-        status.textContent=
-          "⚠️ Speech recognition: " + event.error;
-
-      }
-
-    }
-
-    isRecognizing=false;
-
-  };
-
-  recognition.onend=function(){
-
-    isRecognizing=false;
-
-    // Chrome can stop recognition automatically after a pause.
-    // Restart it while the audio recorder is still running.
-    if(recorder && recorder.state==="recording"){
-
+    if(recognition){
+      finalTranscript = "";
       try{
         recognition.start();
-        return;
       }catch(e){}
-
     }
-
-    const result=finalTranscript.trim();
-
-    if(status){
-
-      status.textContent =
-        result
-        ? "✅ Transcription completed."
-        : "⚠️ No words were transcribed.";
-
-    }
-
-    if(textBox && !result){
-
-      textBox.textContent=
-        "No transcription available.";
-
-    }
-
-  };
-
-  try{
-
-    recognition.start();
 
   }catch(error){
-
-    console.warn(error);
-    isRecognizing=false;
-
+    console.error(error);
+    setStatus(
+      "❌ Could not access the microphone. Please allow microphone permission for this website and try again."
+    );
   }
-
 }
-function stopTranscription(){
+
+function stopRecording(){
+  if(!isRecording) return;
+
+  isRecording = false;
+
+  startButton.disabled = false;
+  stopButton.disabled = true;
 
   if(recognition){
-
     try{
       recognition.stop();
-    }catch(error){
-      console.warn(error);
-    }
-
+    }catch(e){}
   }
 
-  isRecognizing=false;
-
-}
-function updateTimer(){
-  const m=String(Math.floor(seconds/60)).padStart(2,"0");
-  const s=String(seconds%60).padStart(2,"0");
-  const timer=document.getElementById("timer");
-  if(timer) timer.textContent=`Recording time: ${m}:${s}`;
-}
-
-function clearRecording(){
-  if(timerInterval) clearInterval(timerInterval);
-  if(recordingUrl){
-    URL.revokeObjectURL(recordingUrl);
-    recordingUrl=null;
+  if(mediaRecorder && mediaRecorder.state !== "inactive"){
+    mediaRecorder.stop();
   }
-  recordingBlob=null;
-  chunks=[];
-
-  const player=document.getElementById("playerArea");
-  const actions=document.getElementById("actionArea");
-  const timer=document.getElementById("timer");
-  const recordBtn=document.getElementById("recordBtn");
-  const stopBtn=document.getElementById("stopBtn");
-
-  if(player) player.innerHTML="";
-  if(actions) actions.innerHTML="";
-  if(timer) timer.textContent="";
-
-  finalTranscript="";
-  if(recognition){
-    try{ recognition.abort(); }catch(e){}
-  }
-  isRecognizing=false;
-
-  const transcriptArea=document.getElementById("transcriptArea");
-  const transcriptText=document.getElementById("transcriptText");
-  const transcribeStatus=document.getElementById("transcribeStatus");
-  if(transcriptArea) transcriptArea.classList.remove("hidden");
-  if(transcriptText) transcriptText.textContent="Your spoken answer will appear here while you talk.";
-  if(transcribeStatus) transcribeStatus.textContent="Start recording and speak in English. The text will appear automatically.";
-
-  if(recordBtn) recordBtn.disabled=false;
-  if(stopBtn) stopBtn.disabled=true;
 }
 
-function downloadRecording(){
-  if(!recordingBlob || !recordingUrl){
-    alert("There is no recording to save.");
-    return;
-  }
+startButton.addEventListener("click", startRecording);
+stopButton.addEventListener("click", stopRecording);
 
-  const extension=recordingBlob.type.includes("mp4") ? "m4a" : "webm";
-  const safeTitle=selectedLesson ? selectedLesson.title.replace(/[^a-z0-9]+/gi,"_") : "speaking";
-  const link=document.createElement("a");
-  link.href=recordingUrl;
-  link.download=`English_Trainer_${safeTitle}_${Date.now()}.${extension}`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-
-  const status=document.getElementById("status");
-  if(status) status.textContent="✅ Recording saved to your device.";
-}
-
-document.getElementById("homeButton").onclick=()=>{
-  document.getElementById("homeButton").classList.add("active");
-  document.getElementById("speakingButton").classList.remove("active");
-};
-
-document.getElementById("speakingButton").onclick=()=>{
-  document.getElementById("speakingButton").classList.add("active");
-  document.getElementById("homeButton").classList.remove("active");
-  document.getElementById("lessonList").scrollIntoView({behavior:"smooth"});
-};
-
-renderLessons();
+setupRecognition();
 </script>
 </body>
 </html>
